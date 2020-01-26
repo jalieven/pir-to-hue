@@ -29,6 +29,7 @@ async function discoverBridge() {
 async function decideHueLight(args) {
     const { authenticatedApi, kitchen } = args;
     const pirDetected = pir.readSync();
+    console.log('PIR is seeing: ' + pirDetected);
     if (pirDetected) {
         pirCache.detected = moment();
     }
@@ -62,13 +63,12 @@ async function discoverAndCreateUser() {
   try {
     // Create a new API instance that is authenticated with the new user we created
     const authenticatedApi = await hueApi.createLocal(ipAddress).connect(config.hueUsername);
-
     // Do something with the authenticated user/api
     const bridgeConfig = await authenticatedApi.configuration.getConfiguration();
     console.log(`Connected to Hue Bridge: ${bridgeConfig.name} :: ${bridgeConfig.ipaddress}`);
-
     const allGroups = await authenticatedApi.groups.getAll();
     const kitchen = _.find(allGroups, group => group.name === 'Kitchen');
+    console.log('Kitchen state: ' + kitchen.toStringDetailed())
     lightCache.state = _.get(kitchen, 'state.all_on', false);
     setIntervalAsync(async function decide() {
         await decideHueLight({ authenticatedApi, kitchen });
