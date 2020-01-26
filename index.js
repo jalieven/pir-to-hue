@@ -6,9 +6,6 @@ const config = require('./config');
 
 const pir = new Gpio(4, 'in', 'both');
 
-const appName = 'pir-to-hue';
-const deviceName = 'c3po';
-
 async function discoverBridge() {
   const discoveryResults = await discovery.nupnpSearch();
 
@@ -23,46 +20,27 @@ async function discoverBridge() {
 
 async function discoverAndCreateUser() {
   const ipAddress = await discoverBridge();
-
-  // Create an unauthenticated instance of the Hue API so that we can create a new user
-//   const unauthenticatedApi = await hueApi.createLocal(ipAddress).connect();
-
-//   let createdUser;
   try {
-    // createdUser = await unauthenticatedApi.users.createUser(appName, deviceName);
-    // console.log('*******************************************************************************\n');
-    // console.log('User has been created on the Hue Bridge. The following username can be used to\n' +
-    //             'authenticate with the Bridge and provide full local access to the Hue Bridge.\n' +
-    //             'YOU SHOULD TREAT THIS LIKE A PASSWORD\n');
-    // console.log(`Hue Bridge User: ${createdUser.username}`);
-    // console.log(`Hue Bridge User Client Key: ${createdUser.clientkey}`);
-    // console.log('*******************************************************************************\n');
-
     // Create a new API instance that is authenticated with the new user we created
     const authenticatedApi = await hueApi.createLocal(ipAddress).connect(config.hueUsername);
 
     // Do something with the authenticated user/api
-    const bridgeConfig = await authenticatedApi.configuration.get();
+    const bridgeConfig = await authenticatedApi.configuration.getConfiguration();
     console.log(`Connected to Hue Bridge: ${bridgeConfig.name} :: ${bridgeConfig.ipaddress}`);
 
     const allGroups = await authenticatedApi.groups.getAll();
     const kitchen = _.find(allGroups, group => group.name === 'Kitchen');
-    // allGroups.forEach(group => {
-    //     console.log(group.toStringDetailed());
-    // });
-
     pir.watch(async function(err, value) {
         if (value == 1) {
             console.log('Motion detected');
-            const groupState = new GroupLightState().on().brightness(20).saturation(50);
+            const groupState = new GroupLightState().on().ct(200).brightness(100).transition(config.transitionTime);
             await authenticatedApi.groups.setGroupState(kitchen.id, groupState);
         } else {
             console.log('Motion stopped');
-            const groupState = new GroupLightState().off();
+            const groupState = new GroupLightState().off().transition(config.transitionTime);
             await authenticatedApi.groups.setGroupState(kitchen.id, groupState);
         }
     });
-
   } catch(err) {
     if (err.getHueErrorType() === 101) {
       console.error('The Link button on the bridge was not pressed. Please press the Link button and try again.');
