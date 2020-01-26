@@ -1,5 +1,8 @@
+const _ = require('lodash');
 const Gpio = require('onoff').Gpio;
 const v3 = require('node-hue-api').v3, discovery = v3.discovery , hueApi = v3.api;
+
+const config = require('./config');
 
 const pir = new Gpio(4, 'in', 'both');
 
@@ -22,40 +25,41 @@ async function discoverAndCreateUser() {
   const ipAddress = await discoverBridge();
 
   // Create an unauthenticated instance of the Hue API so that we can create a new user
-  const unauthenticatedApi = await hueApi.createLocal(ipAddress).connect();
+//   const unauthenticatedApi = await hueApi.createLocal(ipAddress).connect();
 
-  let createdUser;
+//   let createdUser;
   try {
-    createdUser = await unauthenticatedApi.users.createUser(appName, deviceName);
-    console.log('*******************************************************************************\n');
-    console.log('User has been created on the Hue Bridge. The following username can be used to\n' +
-                'authenticate with the Bridge and provide full local access to the Hue Bridge.\n' +
-                'YOU SHOULD TREAT THIS LIKE A PASSWORD\n');
-    console.log(`Hue Bridge User: ${createdUser.username}`);
-    console.log(`Hue Bridge User Client Key: ${createdUser.clientkey}`);
-    console.log('*******************************************************************************\n');
+    // createdUser = await unauthenticatedApi.users.createUser(appName, deviceName);
+    // console.log('*******************************************************************************\n');
+    // console.log('User has been created on the Hue Bridge. The following username can be used to\n' +
+    //             'authenticate with the Bridge and provide full local access to the Hue Bridge.\n' +
+    //             'YOU SHOULD TREAT THIS LIKE A PASSWORD\n');
+    // console.log(`Hue Bridge User: ${createdUser.username}`);
+    // console.log(`Hue Bridge User Client Key: ${createdUser.clientkey}`);
+    // console.log('*******************************************************************************\n');
 
     // Create a new API instance that is authenticated with the new user we created
-    const authenticatedApi = await hueApi.createLocal(ipAddress).connect(createdUser.username);
+    const authenticatedApi = await hueApi.createLocal(ipAddress).connect(config.hueUsername);
 
     // Do something with the authenticated user/api
     const bridgeConfig = await authenticatedApi.configuration.get();
     console.log(`Connected to Hue Bridge: ${bridgeConfig.name} :: ${bridgeConfig.ipaddress}`);
 
     const allGroups = await authenticatedApi.groups.getAll();
-    allGroups.forEach(group => {
-        console.log(group.toStringDetailed());
-    });
+    const kitchen = _.find(allGroups, group => group.name === 'Kitchen');
+    // allGroups.forEach(group => {
+    //     console.log(group.toStringDetailed());
+    // });
 
     pir.watch(function(err, value) {
         if (value == 1) {
             console.log('Motion detected');
-            // const groupState = new GroupLightState().on().brightness(20).saturation(50);
-            // await authenticatedApi.groups.setGroupState(GROUP_ID, groupState);
+            const groupState = new GroupLightState().on().brightness(20).saturation(50);
+            await authenticatedApi.groups.setGroupState(kitchen.id, groupState);
         } else {
             console.log('Motion stopped');
-            // const groupState = new GroupLightState().off();
-            // await authenticatedApi.groups.setGroupState(GROUP_ID, groupState);
+            const groupState = new GroupLightState().off();
+            await authenticatedApi.groups.setGroupState(kitchen.id, groupState);
         }
     });
 
