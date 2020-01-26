@@ -12,6 +12,8 @@ const pirCache = {
     detected: moment(),
 };
 
+const lightCache = {};
+
 async function discoverBridge() {
   const discoveryResults = await discovery.nupnpSearch();
 
@@ -27,17 +29,31 @@ async function discoverBridge() {
 async function decideHueLight(args) {
     const { authenticatedApi, kitchen } = args;
     const pirDetected = pir.readSync();
-    console.log('PIR state: ' + pirDetected);
     if (pirDetected) {
         pirCache.detected = moment();
     }
     const future = pirCache.detected.clone().add(config.cacheValue, config.cacheUnit);
-    if (future.isAfter(moment())) {
-        const groupState = new GroupLightState().on().ct(400).brightness(100).transition(config.transitionTime);
-        await authenticatedApi.groups.setGroupState(kitchen.id, groupState);
+    // first check the state and switch accordingly: dont hammer every second
+    const shouldBeOn = future.isAfter(moment());
+    const isOn = lightCache.state;
+    if (!isOn) {
+        if (shouldBeOn) {
+            console.log('Light should be on, setting light on');
+            const groupState = new GroupLightState().on().ct(400).brightness(100).transition(config.transitionTime);
+            await authenticatedApi.groups.setGroupState(kitchen.id, groupState); 
+            lightCache.state = true;   
+        } else {
+            console.log('Light should stay off, doing nothing');
+        }
     } else {
-        const groupState = new GroupLightState().off().transition(config.transitionTime);
-        await authenticatedApi.groups.setGroupState(kitchen.id, groupState);
+        if (!shouldBeOn) {
+            console.log('Light is on but should be off, switching lights off')
+            const groupState = new GroupLightState().off().transition(config.transitionTime);
+            await authenticatedApi.groups.setGroupState(kitchen.id, groupState);
+            lightCache.state = false;  
+        } else {
+            console.log('Light should be on and are on, doing nothing');
+        }
     }
 }
 
@@ -53,12 +69,7 @@ async function discoverAndCreateUser() {
 
     const allGroups = await authenticatedApi.groups.getAll();
     const kitchen = _.find(allGroups, group => group.name === 'Kitchen');
-    // pir.watch(async function(err, value) {
-    //     if (value == 1) {
-    //         console.log('Motion detected');
-    //         pirCache.detected = moment();
-    //     }
-    // });
+    lightCache.state = _.get(kitchen, 'state.all_on', false);
     setIntervalAsync(async function decide() {
         await decideHueLight({ authenticatedApi, kitchen });
     }, 1000);
