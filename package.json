@@ -1,0 +1,22 @@
+{
+  "name": "pir-to-hue",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jalieven/pir-to-hue.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/jalieven/pir-to-hue/issues"
+  },
+  "homepage": "https://github.com/jalieven/pir-to-hue#readme",
+  "dependencies": {
+    "onoff": "^5.0.1"
+  }
+}
