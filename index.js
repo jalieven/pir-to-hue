@@ -1,6 +1,5 @@
 const Gpio = require('onoff').Gpio;
-const Hue = require('node-hue-api').v4;
-const { discovery, api } = Hue;
+const v3 = require('node-hue-api').v3, discovery = v3.discovery , hueApi = v3.api;
 
 const pir = new Gpio(4, 'in', 'both');
 
@@ -23,7 +22,7 @@ async function discoverAndCreateUser() {
   const ipAddress = await discoverBridge();
 
   // Create an unauthenticated instance of the Hue API so that we can create a new user
-  const unauthenticatedApi = await api.createLocal(ipAddress).connect();
+  const unauthenticatedApi = await hueApi.createLocal(ipAddress).connect();
 
   let createdUser;
   try {
@@ -37,7 +36,7 @@ async function discoverAndCreateUser() {
     console.log('*******************************************************************************\n');
 
     // Create a new API instance that is authenticated with the new user we created
-    const authenticatedApi = await api.createLocal(ipAddress).connect(createdUser.username);
+    const authenticatedApi = await hueApi.createLocal(ipAddress).connect(createdUser.username);
 
     // Do something with the authenticated user/api
     const bridgeConfig = await authenticatedApi.configuration.get();
