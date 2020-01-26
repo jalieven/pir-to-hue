@@ -2,6 +2,7 @@ const _ = require('lodash');
 const Gpio = require('onoff').Gpio;
 const v3 = require('node-hue-api').v3, discovery = v3.discovery , hueApi = v3.api, GroupLightState = v3.lightStates.GroupLightState;
 const moment = require('moment');
+const { setIntervalAsync, clearIntervalAsync } = require('set-interval-async/dynamic');
 
 const config = require('./config');
 
@@ -57,7 +58,7 @@ async function discoverAndCreateUser() {
             pirCache.stopped = moment();
         }
     });
-    setInterval(async function decide() {
+    setIntervalAsync(async function decide() {
         await decideHueLight({ authenticatedApi, kitchen });
     }, 1000);
   } catch(err) {
