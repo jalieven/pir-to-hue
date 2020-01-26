@@ -1,10 +1,13 @@
 const _ = require('lodash');
 const Gpio = require('onoff').Gpio;
 const v3 = require('node-hue-api').v3, discovery = v3.discovery , hueApi = v3.api, GroupLightState = v3.lightStates.GroupLightState;
+const moment = require('moment');
 
 const config = require('./config');
 
 const pir = new Gpio(4, 'in', 'both');
+
+const pirCache = {};
 
 async function discoverBridge() {
   const discoveryResults = await discovery.nupnpSearch();
@@ -16,6 +19,17 @@ async function discoverBridge() {
     // Ignoring that you could have more than one Hue Bridge on a network as this is unlikely in 99.9% of users situations
     return discoveryResults[0].ipaddress;
   }
+}
+
+async function decideHueLight() {
+    const past = moment().subtract(30, 'minutes');
+    if (past.isBefore(pirCache.detected)) {
+        const groupState = new GroupLightState().on().ct(500).brightness(100).transition(config.transitionTime);
+        await authenticatedApi.groups.setGroupState(kitchen.id, groupState);
+    } else {
+        const groupState = new GroupLightState().off().transition(config.transitionTime);
+        await authenticatedApi.groups.setGroupState(kitchen.id, groupState);
+    }
 }
 
 async function discoverAndCreateUser() {
@@ -33,12 +47,12 @@ async function discoverAndCreateUser() {
     pir.watch(async function(err, value) {
         if (value == 1) {
             console.log('Motion detected');
-            const groupState = new GroupLightState().on().ct(200).brightness(100).transition(config.transitionTime);
-            await authenticatedApi.groups.setGroupState(kitchen.id, groupState);
+            pirCache.detected = moment.now();
+            await decideHueLight();
         } else {
             console.log('Motion stopped');
-            const groupState = new GroupLightState().off().transition(config.transitionTime);
-            await authenticatedApi.groups.setGroupState(kitchen.id, groupState);
+            pirCache.stopped = moment.now();
+            await decideHueLight();
         }
     });
   } catch(err) {
