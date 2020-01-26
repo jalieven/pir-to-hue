@@ -10,7 +10,6 @@ const pir = new Gpio(4, 'in', 'both');
 
 const pirCache = {
     detected: moment(),
-    stopped: moment().subtract(1, 'seconds'),
 };
 
 async function discoverBridge() {
@@ -27,6 +26,11 @@ async function discoverBridge() {
 
 async function decideHueLight(args) {
     const { authenticatedApi, kitchen } = args;
+    const pirDetected = pir.readSync();
+    console.log('PIR state: ' + pirDetected);
+    if (pirDetected) {
+        pirCache.detected = moment();
+    }
     const future = pirCache.detected.clone().add(config.cacheValue, config.cacheUnit);
     if (future.isAfter(moment())) {
         const groupState = new GroupLightState().on().ct(400).brightness(100).transition(config.transitionTime);
@@ -49,15 +53,12 @@ async function discoverAndCreateUser() {
 
     const allGroups = await authenticatedApi.groups.getAll();
     const kitchen = _.find(allGroups, group => group.name === 'Kitchen');
-    pir.watch(async function(err, value) {
-        if (value == 1) {
-            console.log('Motion detected');
-            pirCache.detected = moment();
-        } else {
-            console.log('Motion stopped');
-            pirCache.stopped = moment();
-        }
-    });
+    // pir.watch(async function(err, value) {
+    //     if (value == 1) {
+    //         console.log('Motion detected');
+    //         pirCache.detected = moment();
+    //     }
+    // });
     setIntervalAsync(async function decide() {
         await decideHueLight({ authenticatedApi, kitchen });
     }, 1000);
