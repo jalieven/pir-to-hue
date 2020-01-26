@@ -51,7 +51,7 @@ async function discoverAndCreateUser() {
     //     console.log(group.toStringDetailed());
     // });
 
-    pir.watch(function(err, value) {
+    pir.watch(async function(err, value) {
         if (value == 1) {
             console.log('Motion detected');
             const groupState = new GroupLightState().on().brightness(20).saturation(50);
