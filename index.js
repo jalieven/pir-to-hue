@@ -72,7 +72,7 @@ async function discoverAndCreateUser() {
     lightCache.state = _.get(kitchen, 'state.all_on', false);
     setIntervalAsync(async function decide() {
         await decideHueLight({ authenticatedApi, kitchen });
-    }, 1000);
+    }, config.checkInterval);
   } catch(err) {
     if (err.getHueErrorType() === 101) {
       console.error('The Link button on the bridge was not pressed. Please press the Link button and try again.');
