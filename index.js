@@ -26,6 +26,7 @@ async function discoverBridge() {
 
 async function decideHueLight(args) {
     const { authenticatedApi, kitchen } = args;
+    console.log(pirCache.detected);
     const future = pirCache.detected.clone().add(config.cacheValue, config.cacheUnit);
     if (future.isAfter(moment.now())) {
         const groupState = new GroupLightState().on().ct(400).brightness(100).transition(config.transitionTime);
@@ -51,10 +52,10 @@ async function discoverAndCreateUser() {
     pir.watch(async function(err, value) {
         if (value == 1) {
             console.log('Motion detected');
-            pirCache.detected = moment.now();
+            pirCache.detected = moment();
         } else {
             console.log('Motion stopped');
-            pirCache.stopped = moment.now();
+            pirCache.stopped = moment();
         }
     });
     setInterval(async function decide() {
