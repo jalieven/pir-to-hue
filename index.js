@@ -26,9 +26,8 @@ async function discoverBridge() {
 
 async function decideHueLight(args) {
     const { authenticatedApi, kitchen } = args;
-    console.log(pirCache.detected);
     const future = pirCache.detected.clone().add(config.cacheValue, config.cacheUnit);
-    if (future.isAfter(moment.now())) {
+    if (future.isAfter(moment())) {
         const groupState = new GroupLightState().on().ct(400).brightness(100).transition(config.transitionTime);
         await authenticatedApi.groups.setGroupState(kitchen.id, groupState);
     } else {
@@ -60,7 +59,7 @@ async function discoverAndCreateUser() {
     });
     setInterval(async function decide() {
         await decideHueLight({ authenticatedApi, kitchen });
-    }, 5000);
+    }, 1000);
   } catch(err) {
     if (err.getHueErrorType() === 101) {
       console.error('The Link button on the bridge was not pressed. Please press the Link button and try again.');
