@@ -1,6 +1,6 @@
 const _ = require('lodash');
 const Gpio = require('onoff').Gpio;
-const v3 = require('node-hue-api').v3, discovery = v3.discovery , hueApi = v3.api;
+const v3 = require('node-hue-api').v3, discovery = v3.discovery , hueApi = v3.api, GroupLightState = v3.lightStates.GroupLightState;
 
 const config = require('./config');
 
