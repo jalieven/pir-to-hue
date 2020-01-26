@@ -8,8 +8,8 @@ const config = require('./config');
 const pir = new Gpio(4, 'in', 'both');
 
 const pirCache = {
-    detected: moment.now(),
-    stopped: moment.now().subtract(1, 'seconds'),
+    detected: moment(),
+    stopped: moment().subtract(1, 'seconds'),
 };
 
 async function discoverBridge() {
