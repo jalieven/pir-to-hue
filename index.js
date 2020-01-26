@@ -7,7 +7,10 @@ const config = require('./config');
 
 const pir = new Gpio(4, 'in', 'both');
 
-const pirCache = {};
+const pirCache = {
+    detected: moment.now(),
+    stopped: moment.now().subtract(1, 'seconds'),
+};
 
 async function discoverBridge() {
   const discoveryResults = await discovery.nupnpSearch();
