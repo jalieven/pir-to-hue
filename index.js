@@ -12,7 +12,9 @@ const pirCache = {
     detected: moment(),
 };
 
+
 const lightCache = {};
+
 
 async function discoverBridge() {
   const discoveryResults = await discovery.nupnpSearch();
